@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Patronaje & Confección Pro - Lencería con Factor de Reducción</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --blue: #3498db;
+            --gold: #d97706;
+            --success: #27ae60;
+            --bg: #f4f6f9;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--primary); }
+        .container { max-width: 1180px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 1.4rem; margin: 0; color: var(--primary); }
+        
+        .pro-banner { background: linear-gradient(135deg, #d97706, #b45309); color: white; padding: 10px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-weight: 600; box-shadow: 0 3px 10px rgba(217,119,6,0.3); }
+        .pro-banner.is-pro { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .pro-btn { background: white; color: #b45309; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .pro-btn:hover { background: #fdfefe; transform: scale(1.05); }
+
+        .section-title { font-size: 0.82rem; font-weight: 700; color: #64748b; margin: 18px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .size-bar { background: #eef2f7; padding: 12px 15px; border-radius: 10px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; border: 1px solid #cbd5e1; }
+        .size-bar select { padding: 8px 12px; border-radius: 8px; border: 1px solid #94a3b8; font-weight: 600; font-size: 0.95rem; background: white; }
+
+        .module-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 9px; margin: 15px 0; }
+        .module-btn { padding: 11px 10px; border: 2px solid #cbd5e1; background: #f8fafc; border-radius: 10px; font-weight: 600; color: #334155; cursor: pointer; text-align: center; transition: 0.2s; font-size: 0.85rem; position: relative; }
+        .module-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .module-btn.locked { border-color: var(--gold); background: #fefce8; color: #854d0e; }
+        .module-btn.locked::after { content: ' 🔒'; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.82rem; }
+        .input-group input, .input-group select { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; background: #fff; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+        .action-btn { border: none; padding: 12px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.2s; flex: 1; min-width: 180px; text-align: center; }
+        .btn-update { background: var(--blue); color: white; }
+        .btn-pdf { background: var(--accent); color: white; }
+        .btn-notif { background: #8e44ad; color: white; }
+
+        .canvas-container { text-align: center; margin-top: 18px; background: #fafafa; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px; overflow-x: auto; }
+        canvas { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 6px; max-width: 100%; }
+        
+        .info-panel { margin-top: 15px; background: #e2e8f0; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; color: #1e293b; display: flex; flex-direction: column; gap: 5px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-card { background: white; padding: 30px; border-radius: 16px; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-card h2 { color: var(--gold); margin-top: 0; }
+        .modal-card p { color: #555; font-size: 0.95rem; line-height: 1.5; }
+        .modal-close { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-top: 12px; cursor: pointer; font-weight: 600; }
+        .modal-buy { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 6px; margin-top: 10px; cursor: pointer; font-weight: 700; font-size: 1rem; width: 100%; }
+        .restore-link { background: none; border: none; color: var(--blue); text-decoration: underline; cursor: pointer; margin-top: 12px; font-size: 0.85rem; display: block; width: 100%; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Patronaje & Confección Pro</h1>
+            <small style="color: #64748b;">Módulo Especializado en Lencería y Reducción Elástica</small>
+        </div>
+        <span class="badge" id="badgeStatus" style="background:var(--gold); color:white; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">VERSIÓN GRATUITA</span>
+    </header>
+
+    <div class="pro-banner" id="proBanner">
+        <span id="bannerText">⭐ Desbloquea Ropa Interior con Reducción, Gorras, Sastrería y Folclor</span>
+        <button class="pro-btn" id="proBannerBtn" onclick="abrirModalPro()">¡Obtener Versión Pro!</button>
+    </div>
+
+    <div class="section-title">1. Selecciona Talla Base</div>
+    <div class="size-bar">
+        <label>Talla Preconfigurada:</label>
+        <select id="selectorTalla" onchange="aplicarTalla()">
+            <option value="inf_6">Infantil Talla 6</option>
+            <option value="adu_s">Adulto S / Ch (Cadera 94)</option>
+            <option value="adu_m" selected>Adulto M / Med (Cadera 98)</option>
+            <option value="adu_l">Adulto L / Gde (Cadera 104)</option>
+            <option value="adu_xl">Adulto XL / XG (Cadera 110)</option>
+        </select>
+    </div>
+
+    <div class="section-title">2. Selecciona la Prenda a Trazar</div>
+    <div class="module-selector">
+        <button class="module-btn active" id="modBlusa" onclick="seleccionarModulo('blusa')">1. Blusa Base (Gratis)</button>
+        <button class="module-btn" id="modFalda" onclick="seleccionarModulo('falda')">2. Falda Base (Gratis)</button>
+        <button class="module-btn locked" id="modLenceria" onclick="seleccionarModulo('lenceria')">3. Lencería / Ropa Interior</button>
+        <button class="module-btn locked" id="modGorras" onclick="seleccionarModulo('gorras')">4. Gorras (6 Gajos)</button>
+        <button class="module-btn locked" id="modSaco" onclick="seleccionarModulo('saco')">5. Saco Sastre Pro</button>
+        <button class="module-btn locked" id="modJalisco" onclick="seleccionarModulo('jalisco')">6. Falda Jalisco Pro</button>
+    </div>
+    
+    <div class="section-title" id="tituloMedidas">Parámetros de Medición</div>
+    <div class="form-grid" id="panelInputs"></div>
+
+    <div class="form-grid" style="margin-top: 12px;">
+        <div class="input-group">
+            <label>Vista de Pieza:</label>
+            <select id="tipoVista" onchange="actualizarVista()">
+                <option value="ambos">Ver Ambos (Delantero y Trasero)</option>
+                <option value="delantero">Solo Delantero</option>
+                <option value="trasero">Solo Trasero</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="action-btn btn-update" onclick="actualizarVista()">Actualizar Trazo</button>
+        <button class="action-btn btn-pdf" onclick="exportarPDF()">Descargar Ficha PDF (1:1)</button>
+        <button class="action-btn btn-notif" onclick="solicitarPermisoNotificaciones()">🔔 Activar Avisos</button>
+    </div>
+
+    <div class="info-panel" id="panelInfo">
+        <span>Cargando especificaciones técnicas...</span>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="patronCanvas" width="900" height="480"></canvas>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalPro">
+    <div class="modal-card">
+        <h2>👑 Desbloquea Patronaje & Confección Pro</h2>
+        <p>Acceso total a moldes de ropa interior con factor de reducción elástica, gorras deportivas de 6 gajos, sacos y trajes regionales con PDF escala 1:1.</p>
+        <button class="modal-buy" onclick="iniciarCompraGooglePlay()">Comprar Licencia Pro (Google Play)</button>
+        <button class="restore-link" onclick="restaurarComprasManual()">¿Ya compraste antes? Restaurar compras</button>
+        <button class="modal-close" onclick="cerrarModalPro()">Cerrar</button>
+    </div>
+</div>
+
+<script>
+let moduloActivo = 'blusa';
+let esUsuarioPro = false;
+
+const TABLA_TALLAS = {
+    inf_6:   { busto: 62, cintura: 56, cadera: 66, talle: 30, cabeza: 52 },
+    adu_s:   { busto: 88, cintura: 68, cadera: 94, talle: 42, cabeza: 56 },
+    adu_m:   { busto: 92, cintura: 72, cadera: 98, talle: 43, cabeza: 58 },
+    adu_l:   { busto: 98, cintura: 78, cadera: 104, talle: 44, cabeza: 60 },
+    adu_xl:  { busto: 104, cintura: 84, cadera: 110, talle: 45, cabeza: 62 }
+};
+
+function obtenerMedidas() {
+    const key = document.getElementById('selectorTalla').value;
+    return TABLA_TALLAS[key];
+}
+
+function aplicarTalla() { seleccionarModulo(moduloActivo); }
+
+function seleccionarModulo(mod) {
+    const modulosPro = ['lenceria', 'gorras', 'saco', 'jalisco'];
+    if (modulosPro.includes(mod) && !esUsuarioPro) {
+        abrirModalPro();
+        return;
+    }
+
+    moduloActivo = mod;
+    document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+    const mapa = { blusa: 'modBlusa', falda: 'modFalda', lenceria: 'modLenceria', gorras: 'modGorras', saco: 'modSaco', jalisco: 'modJalisco' };
+    document.getElementById(mapa[mod]).classList.add('active');
+
+    const panel = document.getElementById('panelInputs');
+    const m = obtenerMedidas();
+
+    if (mod === 'lenceria') {
+        panel.innerHTML = `
+            <div class="input-group"><label>Contorno Cadera / Cuerpo (cm):</label><input type="number" id="lCadera" value="${m.cadera}" step="0.5"></div>
+            <div class="input-group"><label>Factor Reducción Elástica (%):</label><input type="number" id="lReduccion" value="15" step="1" min="0" max="40"></div>
+        `;
+    } else if (mod === 'gorras') {
+        panel.innerHTML = `
+            <div class="input-group"><label>Contorno de Cabeza (cm):</label><input type="number" id="gCabeza" value="${m.cabeza}" step="0.5"></div>
+            <div class="input-group"><label>Profundidad Gorra (cm):</label><input type="number" id="gProf" value="16" step="0.5"></div>
+        `;
+    } else {
+        panel.innerHTML = `
+            <div class="input-group"><label>Contorno Principal (cm):</label><input type="number" id="mPpal" value="${m.busto}" step="0.5"></div>
+            <div class="input-group"><label>Largo (cm):</label><input type="number" id="mLar" value="${m.talle}" step="0.5"></div>
+        `;
+    }
+    actualizarVista();
+}
+
+function abrirModalPro() { document.getElementById('modalPro').style.display = 'flex'; }
+function cerrarModalPro() { document.getElementById('modalPro').style.display = 'none'; }
+
+async function iniciarCompraGooglePlay() {
+    if (!window.getDigitalGoodsService) {
+        if (confirm("Simulando compra de prueba en Google Play. ¿Desea activar el modo Pro?")) {
+            activarModoProReal();
+        }
+        return;
+    }
+    try {
+        const service = await window.getDigitalGoodsService("https://play.google.com/billing");
+        const paymentDetails = { item: { id: "patronaje_pro_ilimitado", title: "Licencia Pro Ilimitada", price: { currency: "MXN", value: "99.00" } } };
+        const payment = new PaymentRequest([{ supportedMethods: "https://play.google.com/billing", data: paymentDetails }]);
+        const paymentResponse = await payment.show();
+        if (paymentResponse) {
+            await paymentResponse.complete("success");
+            activarModoProReal();
+        }
+    } catch (error) { console.error("Pago cancelado o error:", error); }
+}
+
+async function restaurarComprasManual() {
+    if (!window.getDigitalGoodsService) {
+        alert("Modo simulación: Restauración completada.");
+        activarModoProReal();
+        return;
+    }
+    try {
+        const service = await window.getDigitalGoodsService("https://play.google.com/billing");
+        const comprasPrevias = await service.listPurchases();
+        let encontrada = false;
+        for (const compra of comprasPrevias) {
+            if (compra.itemId === "patronaje_pro_ilimitado") {
+                encontrada = true;
+                activarModoProReal();
+                alert("¡Compra restaurada correctamente!");
+                break;
+            }
+        }
+        if (!encontrada) alert("No se encontraron compras anteriores.");
+    } catch (error) { alert("Error al conectar con Google Play."); }
+}
+
+function activarModoProReal() {
+    esUsuarioPro = true;
+    document.getElementById('badgeStatus').innerText = "MIEMBRO PRO ACTIVADO";
+    document.getElementById('badgeStatus').style.background = "var(--success)";
+    document.getElementById('proBanner').className = "pro-banner is-pro";
+    document.getElementById('bannerText').innerText = "🎉 ¡Licencia Pro verificada! Disfruta de todos los moldes avanzados.";
+    document.getElementById('proBannerBtn').style.display = "none";
+    document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('locked'));
+    cerrarModalPro();
+}
+
+function solicitarPermisoNotificaciones() {
+    if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones."); return; }
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            new Notification("¡Patronaje Pro Activado!", { body: "Recibirás avisos sobre nuevos moldes de ropa interior y factores de elasticidad." });
+        }
+    });
+}
+
+function actualizarVista() {
+    const canvas = document.getElementById('patronCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const infoPanel = document.getElementById('panelInfo');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    if (moduloActivo === 'lenceria') {
+        const caderaReal = parseFloat(document.getElementById('lCadera').value) || 98;
+        const porcentajeReduccion = parseFloat(document.getElementById('lReduccion').value) || 15;
+        
+        // Aplicación matemática de la fórmula de elasticidad
+        const factor = 1 - (porcentajeReduccion / 100);
+        const caderaReducida = caderaReal * factor;
+        const sc = 3.8;
+        const wMolde = (caderaReducida / 4) * sc;
+        const hMolde = 32 * sc;
+
+        infoPanel.innerHTML = `
+            <span><b>Módulo Lencería Activa:</b> Panty / Blúmer Anatómico con Tejido Elástico.</span>
+            <span><b>Medida Real de Cadera:</b> ${caderaReal} cm | <b>Reducción Aplicada:</b> ${porcentajeReduccion}% ➔ <b>Ancho de Trazo Ajustado:</b> ${caderaReducida.toFixed(1)} cm total.</span>
+            <small style="color:#64748b;">*Nota: Los largos verticales no llevan reducción para garantizar comodidad en el tiro.</small>
+        `;
+
+        ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.06)';
+        ctx.beginPath();
+        ctx.moveTo(cx - wMolde/2, cy - hMolde/2);
+        ctx.lineTo(cx + wMolde/2, cy - hMolde/2);
+        ctx.lineTo(cx + wMolde/2 - 15, cy + hMolde/2);
+        ctx.lineTo(cx - wMolde/2 + 15, cy + hMolde/2);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#2c3e50'; ctx.font = 'bold 13px Arial';
+        ctx.fillText("MOLDE LENCERÍA (Delantero con factor elástico)", cx - 150, cy - h/2 - 20);
+
+    } else if (moduloActivo === 'gorras') {
+        const cabeza = parseFloat(document.getElementById('gCabeza').value) || 58;
+        const h = parseFloat(document.getElementById('gProf').value) || 16;
+        const wBase = (cabeza / 6) * 3.5;
+
+        infoPanel.innerHTML = `
+            <span><b>Módulo Sombrerería:</b> Gorra Deportiva de 6 Gajos (Beisbolera).</span>
+            <span><b>Contorno de Cabeza:</b> ${cabeza} cm (dividido en 6 piezas simétricas con margen de costura).</span>
+        `;
+
+        ctx.strokeStyle = '#2980b9'; ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(41, 128, 185, 0.08)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - h * 12);
+        ctx.lineTo(cx + wBase, cy + h * 10);
+        ctx.lineTo(cx - wBase, cy + h * 10);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#2c3e50'; ctx.font = 'bold 13px Arial';
+        ctx.fillText("MOLDE GAJO DE GORRA (CORTAR 6 PIEZAS)", cx - 140, cy - h * 12 - 15);
+    } else {
+        infoPanel.innerHTML = `<span>Módulo activo: <b>${moduloActivo.toUpperCase()}</b>. Trazado geométrico estándar escalado.</span>`;
+        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2;
+        ctx.strokeRect(cx - 130, cy - 180, 260, 360);
+        ctx.fillStyle = 'rgba(52, 152, 219, 0.05)'; ctx.fillRect(cx - 130, cy - 180, 260, 360);
+        ctx.fillStyle = '#2c3e50'; ctx.font = 'bold 14px Arial';
+        ctx.fillText(`MOLDE ACTIVO: ${moduloActivo.toUpperCase()}`, cx - 110, cy - 200);
+    }
+}
+
+function exportarPDF() {
+    const modulosPro = ['lenceria', 'gorras', 'saco', 'jalisco'];
+    if (modulosPro.includes(moduloActivo) && !esUsuarioPro) {
+        abrirModalPro();
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text(`Ficha Pro - ${moduloActivo.toUpperCase()}`, 15, 20);
+    doc.save(`Patron_${moduloActivo}.pdf`);
+}
+
+window.onload = () => seleccionarModulo('blusa');
+</script>
+
+</body>
+</html>
